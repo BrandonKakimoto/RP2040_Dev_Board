@@ -26,3 +26,6 @@ Project Outputs*/
 
 # Folder to save each comparison results
 CompareHistory/
+### Repo-specific ###
+# Third-party datasheet (download from Raspberry Pi instead)
+RP-008279-DS-2-hardware-design-with-rp2040.pdf
