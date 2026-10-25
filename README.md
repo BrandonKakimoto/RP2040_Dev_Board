@@ -1,115 +1,59 @@
-# Embedded Systems with the PIC18F46K22
+# RP2040 Development Board
 
-C programs I wrote for a small microcontroller, the **PIC18F46K22**. They start with turning LEDs on and off and build up to using displays, reading analog voltages, handling interrupts, and reading a digital sensor.
+I designed my own small microcontroller board from scratch. It's built around the **RP2040**, the same chip used in the Raspberry Pi Pico. I drew the circuit and laid out the circuit board in **Altium Designer**, then had it manufactured and assembled by **JLCPCB**.
 
-Built for **ECE 3301L – Introduction to Microcontrollers Lab** at **Cal Poly Pomona**.
+📄 **[View the schematic (PDF)](RP2040_Dev_Board.pdf)**
 
----
+## What's on the board
 
-## What I Learned
-
-| Skill | In plain terms |
+| Part | What it does |
 |---|---|
-| **Inputs and outputs** | Reading buttons and turning LEDs on and off by setting the chip's pins |
-| **State machines** | Writing a program as a set of "modes" with clear rules for moving between them (e.g., green → yellow → red) |
-| **Displays** | Showing text on an LCD screen and numbers on seven-segment displays |
-| **Analog-to-digital conversion (ADC)** | Turning a voltage, like a knob's position, into a number the program can use |
-| **Interrupts** | Letting the hardware tell the program when something is ready, instead of the program checking over and over |
-| **Sensors** | Reading a temperature and humidity sensor by following its datasheet |
+| **RP2040 chip** | The "brain." A dual-core processor that runs the code you program onto the board. |
+| **16 MB flash memory** (W25Q128) | Stores the program. The RP2040 has no built-in storage, so it needs this external memory chip. |
+| **12 MHz crystal** | Gives the chip a steady, accurate clock signal, like a metronome that keeps everything in time. |
+| **USB-C port** | Powers the board and lets you plug it into a computer to upload code. |
+| **ESD protection chip** (USBLC6) | Protects the board from static electricity shocks that come in through the USB port. |
+| **Fuse** (500 mA) | Cuts power if too much current flows, so a short circuit doesn't damage the board or your computer. |
+| **3.3 V voltage regulator** (AP2112K) | USB supplies 5 V, but the chip runs on 3.3 V. This steps the voltage down. |
+| **BOOT and RESET buttons** | RESET restarts the board. Holding BOOT while plugging in puts it in upload mode, so it shows up on your computer like a USB drive. |
+| **SWD header** | A debugging port. It lets you pause the code and inspect it while it runs. |
+| **2 LEDs** | Simple status lights. |
 
----
+**Board size:** 25 × 55 mm, **4 layers**. Four copper layers instead of two give room for a solid ground layer, which keeps signals cleaner and makes routing easier on a small board.
 
-## Tools & Hardware
+## How I designed it
 
-- **Microcontroller:** PIC18F46K22
-- **Board:** Microchip Curiosity Development Board
-- **Software:** MPLAB X IDE with the XC8 C compiler
+1. **Schematic.** I drew the circuit: which parts connect to which. I followed Raspberry Pi's official guide, *Hardware design with RP2040*, for the parts the chip needs around it to work.
+2. **Parts.** I picked parts JLCPCB stocks, so they could assemble the board for me. I added their LCSC part numbers to the parts list (BOM).
+3. **PCB layout.** I placed the parts and routed the copper traces between them. A few things needed extra care:
+   - **Small capacitors right next to the chip's power pins.** They act like tiny local batteries that smooth out the power supply.
+   - **The USB data lines** run as a matched pair of equal length, so the signals arrive at the same time.
+   - **The flash memory** sits close to the chip, with short traces, because it runs fast.
+4. **Design rules.** I set rules in Altium (minimum trace width, spacing, and so on) to match what JLCPCB can manufacture, then ran the rule check to catch errors.
+5. **Ordering.** I exported the files JLCPCB needs and placed the order.
 
----
-
-## Projects
-
-| # | Project | One-line summary |
-|---|---|---|
-| 2 | [Dice Roller](#lab-2--dice-roller) | Press a button, roll two LED dice |
-| 3 | [Traffic Light](#lab-3--traffic-light) | A timed traffic light for a four-way intersection |
-| 4 | [Traffic Light with Emergency & Crosswalk](#lab-4--traffic-light-with-emergency--crosswalk) | Adds an emergency stop button and a crosswalk countdown |
-| 5 | [LCD & Seven-Segment Displays](#lab-5--lcd--seven-segment-displays) | Shows counters on two kinds of displays |
-| 6 | [Reading a Knob (ADC)](#lab-6--reading-a-knob-adc) | Reads a knob's position and shows it on LEDs |
-| 7 | [Digital Voltmeter](#lab-7--digital-voltmeter) | Measures voltage and shows it on the LCD, using interrupts |
-| 8 | [Temperature & Humidity Monitor](#lab-8--temperature--humidity-monitor) | Reads a DHT11 sensor and shows the results |
-
----
-
-### Lab 2 – Dice Roller
-**What it does:** Two groups of LEDs act like dice. Pressing a button picks two random numbers from 1 to 6 and lights up the matching dice pattern for 3 seconds.
-
-**How it works:** A lookup table stores which LEDs to turn on for each number, so the program doesn't need a separate `if` statement for every face. The program also waits for the button to be released so one press doesn't count as several rolls (this is called *debouncing*).
-
-### Lab 3 – Traffic Light
-**What it does:** Controls 12 LEDs as traffic lights for North, South, East, and West. East–West gets green for 6 seconds, then yellow for 3, then North–South gets the same.
-
-**How it works:** The program is a *state machine*: each step of the light cycle is a state, and the program moves through them in order. It starts with all lights red so it's always in a safe state, and two directions can never be green at the same time.
-
-### Lab 4 – Traffic Light with Emergency & Crosswalk
-**What it does:** Builds on Lab 3 with two buttons:
-- **Emergency stop:** flashes every light red right away. It overrides everything else.
-- **Crosswalk button:** the program remembers the press and waits for a safe moment in the cycle, then counts down 9 to 0 on a seven-segment display.
-
-**How it works:** The main idea is *priority*. The emergency button always wins. The crosswalk request is saved and only handled when it's safe, the same way a real crosswalk button works.
-
-### Lab 5 – LCD & Seven-Segment Displays
-**What it does:**
-- **Part 1:** A 16x2 LCD screen counts from 0 to 15 and keeps track of how many times it has started over.
-- **Part 2:** Two seven-segment digits count seconds from 00 to 59.
-
-**How it works:** The two digits share the same wires. The program lights one digit, then the other, switching so fast your eye sees both on at once (this is called *multiplexing*). It saves pins on the chip.
-
-### Lab 6 – Reading a Knob (ADC)
-**What it does:** Reads the position of a knob (potentiometer) and shows the value in binary on 10 LEDs.
-
-**How it works:** The chip's ADC turns the knob's voltage into a number from 0 to 1023. The program starts a conversion, waits for it to finish, and copies the result to the LEDs.
-
-### Lab 7 – Digital Voltmeter
-**What it does:** Same as Lab 6, but it also calculates the actual voltage (0–5 V) and shows both the raw number and the voltage on the LCD.
-
-**How it works:** Instead of waiting in a loop for the ADC, the program uses an *interrupt*: the ADC signals when it's done, and a special function handles the result right away. The voltage is calculated as `value ÷ 1023 × 5 V`. I also had to move some LEDs to different pins because the LCD needed them.
-
-### Lab 8 – Temperature & Humidity Monitor
-**What it does:** Reads temperature and humidity from a DHT11 sensor and shows them on the LCD.
-
-**How it works:** The sensor sends data over a single wire, and each 0 or 1 is encoded by how long the signal stays high. Following the datasheet, the program sends a "start" signal, then times each pulse to read 40 bits. It checks the last byte (a *checksum*) to make sure the data arrived correctly.
-
----
-
-## How to Run
-
-1. Install [MPLAB X IDE](https://www.microchip.com/mplab/mplab-x-ide) and the [XC8 compiler](https://www.microchip.com/mplab/compilers).
-2. Open a lab folder as a project in MPLAB X, or create a new **PIC18F46K22** project and add that lab's files.
-3. Connect the Curiosity board, then build and upload.
-4. Wire the parts as described in that lab.
-
----
-
-## Folder Layout
+## What's in this repo
 
 ```
-.
-├── Lab02_Dice/
-├── Lab03_TrafficLight/
-├── Lab04_TrafficLight_EmergencyPedestrian/
-├── Lab05_LCD_SevenSegment/
-├── Lab06_ADC_Polling/
-├── Lab07_ADC_Interrupt_LCD/
-├── Lab08_DHT11/
-└── README.md
+RP2040_Dev_Board.PrjPcb   Altium project file (opens everything below)
+RP2040_Dev_Board.SchDoc   Schematic (the circuit diagram)
+RP2040_Dev_Board.PcbDoc   PCB layout (the physical board design)
+RP2040_Dev_Board.pdf      Schematic as a PDF, so you can view it without Altium
+RP2040_rules.RUL          Design rules
+Library/                  Part symbols and footprints I used
+fabrication/              The exact files I sent to JLCPCB
 ```
 
----
+### Files sent to the manufacturer (`fabrication/`)
+
+- **Gerbers** (`.zip`): the board "blueprints," one image per layer, used to make the bare circuit board.
+- **BOM** (`.xlsx`): the bill of materials, a shopping list of every part.
+- **CPL** (`.csv`): the pick-and-place file. It tells the assembly machine where each part goes and how it's rotated.
+
+## Tools
+
+Altium Designer · JLCPCB (manufacturing and assembly)
 
 ## Author
 
-**Brandon Kakimoto**, Cal Poly Pomona
-[GitHub](https://github.com/BrandonKakimoto)
-
-> Course projects for ECE 3301L. The lab instructions came from the course. The code is my own.
+Brandon Kakimoto, Computer Engineering, Cal Poly Pomona
