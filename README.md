@@ -1,55 +1,59 @@
 # RP2040 Development Board
 
-A custom, compact development board built around the Raspberry Pi **RP2040** microcontroller. Designed from scratch in **Altium Designer** (schematic, 4-layer PCB layout, custom libraries) and fabricated and assembled by **JLCPCB**.
+I designed my own small microcontroller board from scratch. It's built around the **RP2040**, the same chip used in the Raspberry Pi Pico. I drew the circuit and laid out the circuit board in **Altium Designer**, then had it manufactured and assembled by **JLCPCB**.
 
 📄 **[View the schematic (PDF)](RP2040_Dev_Board.pdf)**
 
-## Specs
+## What's on the board
 
-| | |
+| Part | What it does |
 |---|---|
-| MCU | RP2040 — dual-core Arm Cortex-M0+ @ up to 133 MHz, 264 KB SRAM |
-| Flash | 16 MB QSPI (Winbond W25Q128JVSIQ) |
-| Clock | 12 MHz crystal (Abracon ABM8-272-T3) |
-| USB | USB-C (HRO TYPE-C-31-M-12), USB 2.0 full-speed, 5.1 kΩ CC pull-downs |
-| Protection | USBLC6-2SC6 ESD protection on D+/D−, 500 mA resettable PTC fuse on VBUS |
-| Power | AP2112K-3.3 LDO (5 V → 3.3 V, 600 mA); RP2040 internal 1.1 V core regulator |
-| Controls | BOOTSEL and RESET tactile buttons |
-| Debug | SWD header (SWCLK / SWDIO / GND) |
-| Indicators | 2 status LEDs |
-| PCB | 25 × 55 mm, 4-layer |
+| **RP2040 chip** | The "brain." A dual-core processor that runs the code you program onto the board. |
+| **16 MB flash memory** (W25Q128) | Stores the program. The RP2040 has no built-in storage, so it needs this external memory chip. |
+| **12 MHz crystal** | Gives the chip a steady, accurate clock signal, like a metronome that keeps everything in time. |
+| **USB-C port** | Powers the board and lets you plug it into a computer to upload code. |
+| **ESD protection chip** (USBLC6) | Protects the board from static electricity shocks that come in through the USB port. |
+| **Fuse** (500 mA) | Cuts power if too much current flows, so a short circuit doesn't damage the board or your computer. |
+| **3.3 V voltage regulator** (AP2112K) | USB supplies 5 V, but the chip runs on 3.3 V. This steps the voltage down. |
+| **BOOT and RESET buttons** | RESET restarts the board. Holding BOOT while plugging in puts it in upload mode, so it shows up on your computer like a USB drive. |
+| **SWD header** | A debugging port. It lets you pause the code and inspect it while it runs. |
+| **2 LEDs** | Simple status lights. |
 
-## Design highlights
+**Board size:** 25 × 55 mm, **4 layers**. Four copper layers instead of two give room for a solid ground layer, which keeps signals cleaner and makes routing easier on a small board.
 
-- Followed Raspberry Pi's *Hardware design with RP2040* guidelines for decoupling, crystal load capacitance, and QSPI flash routing.
-- Series termination resistors and length-matched routing on the USB differential pair.
-- Custom design rules (`RP2040_rules.RUL`) matched to JLCPCB's 4-layer capabilities.
-- Assembly-ready: BOM with LCSC part numbers and pick-and-place file included.
+## How I designed it
 
-## Repository layout
+1. **Schematic.** I drew the circuit: which parts connect to which. I followed Raspberry Pi's official guide, *Hardware design with RP2040*, for the parts the chip needs around it to work.
+2. **Parts.** I picked parts JLCPCB stocks, so they could assemble the board for me. I added their LCSC part numbers to the parts list (BOM).
+3. **PCB layout.** I placed the parts and routed the copper traces between them. A few things needed extra care:
+   - **Small capacitors right next to the chip's power pins.** They act like tiny local batteries that smooth out the power supply.
+   - **The USB data lines** run as a matched pair of equal length, so the signals arrive at the same time.
+   - **The flash memory** sits close to the chip, with short traces, because it runs fast.
+4. **Design rules.** I set rules in Altium (minimum trace width, spacing, and so on) to match what JLCPCB can manufacture, then ran the rule check to catch errors.
+5. **Ordering.** I exported the files JLCPCB needs and placed the order.
+
+## What's in this repo
 
 ```
-RP2040_Dev_Board.PrjPcb   Altium project
-RP2040_Dev_Board.SchDoc   Schematic
-RP2040_Dev_Board.PcbDoc   PCB layout
-RP2040_Dev_Board.pdf      Schematic (PDF, viewable without Altium)
-RP2040_rules.RUL          PCB design rules
-Library/                  Integrated component libraries used in the design
-fabrication/              Files sent to JLCPCB: Gerbers, BOM, pick-and-place (CPL)
+RP2040_Dev_Board.PrjPcb   Altium project file (opens everything below)
+RP2040_Dev_Board.SchDoc   Schematic (the circuit diagram)
+RP2040_Dev_Board.PcbDoc   PCB layout (the physical board design)
+RP2040_Dev_Board.pdf      Schematic as a PDF, so you can view it without Altium
+RP2040_rules.RUL          Design rules
+Library/                  Part symbols and footprints I used
+fabrication/              The exact files I sent to JLCPCB
 ```
 
-## Fabrication
+### Files sent to the manufacturer (`fabrication/`)
 
-The `fabrication/` folder contains exactly what was submitted to JLCPCB for PCB fabrication and SMT assembly:
-
-- `RP2040_Dev_Board_Gerbers.zip` — Gerber and drill files
-- `RP2040_Dev_Board_BOM.xlsx` — bill of materials with LCSC part numbers
-- `RP2040_Dev_Board_CPL.csv` — component placement list
+- **Gerbers** (`.zip`): the board "blueprints," one image per layer, used to make the bare circuit board.
+- **BOM** (`.xlsx`): the bill of materials, a shopping list of every part.
+- **CPL** (`.csv`): the pick-and-place file. It tells the assembly machine where each part goes and how it's rotated.
 
 ## Tools
 
-Altium Designer · JLCPCB fabrication and assembly
+Altium Designer · JLCPCB (manufacturing and assembly) · Git (the full design history is in the commits)
 
 ## Author
 
-Brandon Kakimoto — Computer Engineering, Cal Poly Pomona
+Brandon Kakimoto, Computer Engineering, Cal Poly Pomona
